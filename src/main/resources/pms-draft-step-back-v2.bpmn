@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="4.0.0" camunda:diagramRelationId="eec834f1-3962-479a-ade7-5831fa50ee7c">
+  <bpmn:process id="pmsDraftStepBackV2" name="Pms draft step back v2" isExecutable="true">
+    <bpmn:endEvent id="Event_0asu11t" name="Успешно согласовано">
+      <bpmn:incoming>Flow_0kgslto</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="Gateway_0mndal1" name="Отклонено на первом шаге?">
+      <bpmn:incoming>Flow_1hbgvoz</bpmn:incoming>
+      <bpmn:outgoing>Flow_1s1q0ie</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0cxcrd6</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Event_06vukvn" name="Не согласовано">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="end">
+          <camunda:script scriptFormat="groovy">println "approval failed on step 0"</camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1s1q0ie</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_05rndkm" sourceRef="Activity_0pyljg1" targetRef="Gateway_11l2u8i" />
+    <bpmn:sequenceFlow id="Flow_1hbgvoz" sourceRef="Event_1rjrpod" targetRef="Gateway_0mndal1" />
+    <bpmn:sequenceFlow id="Flow_1s1q0ie" name="Да" sourceRef="Gateway_0mndal1" targetRef="Event_06vukvn">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${counter == 0}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0cxcrd6" name="Нет" sourceRef="Gateway_0mndal1" targetRef="Activity_1qo4uf5">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${counter &gt; 0}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:dataObjectReference id="DataObjectReference_0abdzoa" name="Отредактированный список ведомств. Например [id:2, id:3]" dataObjectRef="DataObject_09njpma" />
+    <bpmn:dataObject id="DataObject_09njpma" />
+    <bpmn:startEvent id="Event_0csa3yz" name="Требуется межвед согласование">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="start">
+          <camunda:script scriptFormat="groovy">execution.setVariable("counter", 0)</camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_0v861ia</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_0v861ia" sourceRef="Event_0csa3yz" targetRef="Activity_05mt43k" />
+    <bpmn:userTask id="Activity_1qo4uf5" name="Определить согласующие ведомства" camunda:formKey="embedded:app:rollback.html" camunda:assignee="demo">
+      <bpmn:incoming>Flow_0cxcrd6</bpmn:incoming>
+      <bpmn:outgoing>Flow_0gyafep</bpmn:outgoing>
+      <bpmn:property id="Property_1m3wrma" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_0yc8zmv">
+        <bpmn:sourceRef>DataObjectReference_024hmi1</bpmn:sourceRef>
+        <bpmn:targetRef>Property_1m3wrma</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_0a5ghfj">
+        <bpmn:targetRef>DataObjectReference_0abdzoa</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_1cxzi1m">
+      <bpmn:incoming>Flow_0gyafep</bpmn:incoming>
+      <bpmn:incoming>Flow_0egher0</bpmn:incoming>
+      <bpmn:outgoing>Flow_0zqalt0</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0zqalt0" sourceRef="Gateway_1cxzi1m" targetRef="Activity_0pyljg1" />
+    <bpmn:sequenceFlow id="Flow_0gyafep" sourceRef="Activity_1qo4uf5" targetRef="Gateway_1cxzi1m" />
+    <bpmn:sequenceFlow id="Flow_0egher0" sourceRef="Activity_05mt43k" targetRef="Gateway_1cxzi1m" />
+    <bpmn:exclusiveGateway id="Gateway_11l2u8i" name="Остались ли еще ведомства?">
+      <bpmn:incoming>Flow_05rndkm</bpmn:incoming>
+      <bpmn:outgoing>Flow_0kgslto</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1nnsc2c</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0kgslto" name="Нет" sourceRef="Gateway_11l2u8i" targetRef="Event_0asu11t">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approvals.size() == counter}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1nnsc2c" name="Да" sourceRef="Gateway_11l2u8i" targetRef="Activity_0pyljg1">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${isApproved}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:dataObjectReference id="DataObjectReference_024hmi1" name="Список ведомств: [id:1,id:2,id:3]" dataObjectRef="DataObject_1e3t782" />
+    <bpmn:dataObject id="DataObject_1e3t782" />
+    <bpmn:scriptTask id="Activity_05mt43k" name="Определить согласующие ведомства" scriptFormat="groovy">
+      <bpmn:incoming>Flow_0v861ia</bpmn:incoming>
+      <bpmn:outgoing>Flow_0egher0</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_06ph0ya">
+        <bpmn:targetRef>DataObjectReference_024hmi1</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+      <bpmn:script>execution.setVariable("approvals", [1,2,3])</bpmn:script>
+    </bpmn:scriptTask>
+    <bpmn:userTask id="Activity_0pyljg1" name="Согласовать" camunda:formKey="embedded:app:approval_task.html">
+      <bpmn:incoming>Flow_0zqalt0</bpmn:incoming>
+      <bpmn:incoming>Flow_1nnsc2c</bpmn:incoming>
+      <bpmn:outgoing>Flow_05rndkm</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:boundaryEvent id="Event_1rjrpod" name="Отклонено" attachedToRef="Activity_0pyljg1">
+      <bpmn:outgoing>Flow_1hbgvoz</bpmn:outgoing>
+      <bpmn:conditionalEventDefinition id="ConditionalEventDefinition_0nix9xv">
+        <bpmn:condition xsi:type="bpmn:tFormalExpression">${!isApproved}</bpmn:condition>
+      </bpmn:conditionalEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:textAnnotation id="TextAnnotation_1jn67hu">
+      <bpmn:text>После отклонения формируем новый маршрут на основе старого</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_1hs5en3" sourceRef="Activity_1qo4uf5" targetRef="TextAnnotation_1jn67hu" />
+  </bpmn:process>
+  <bpmn:message id="Message_1jdibtp" name="rejected" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="pmsDraftStepBackV2">
+      <bpmndi:BPMNEdge id="Flow_1nnsc2c_di" bpmnElement="Flow_1nnsc2c">
+        <di:waypoint x="810" y="168" />
+        <di:waypoint x="810" y="100" />
+        <di:waypoint x="660" y="100" />
+        <di:waypoint x="660" y="153" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="728" y="82" width="14" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0kgslto_di" bpmnElement="Flow_0kgslto">
+        <di:waypoint x="835" y="193" />
+        <di:waypoint x="912" y="193" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="864" y="175" width="19" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0egher0_di" bpmnElement="Flow_0egher0">
+        <di:waypoint x="340" y="193" />
+        <di:waypoint x="465" y="193" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0gyafep_di" bpmnElement="Flow_0gyafep">
+        <di:waypoint x="490" y="378" />
+        <di:waypoint x="490" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0zqalt0_di" bpmnElement="Flow_0zqalt0">
+        <di:waypoint x="515" y="193" />
+        <di:waypoint x="610" y="193" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0v861ia_di" bpmnElement="Flow_0v861ia">
+        <di:waypoint x="178" y="193" />
+        <di:waypoint x="240" y="193" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0cxcrd6_di" bpmnElement="Flow_0cxcrd6">
+        <di:waypoint x="665" y="418" />
+        <di:waypoint x="540" y="418" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="610" y="431" width="19" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1s1q0ie_di" bpmnElement="Flow_1s1q0ie">
+        <di:waypoint x="715" y="418" />
+        <di:waypoint x="912" y="418" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="791" y="431" width="14" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1hbgvoz_di" bpmnElement="Flow_1hbgvoz">
+        <di:waypoint x="690" y="251" />
+        <di:waypoint x="690" y="393" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_05rndkm_di" bpmnElement="Flow_05rndkm">
+        <di:waypoint x="710" y="193" />
+        <di:waypoint x="785" y="193" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Event_0asu11t_di" bpmnElement="Event_0asu11t">
+        <dc:Bounds x="912" y="175" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="898" y="218" width="64" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0mndal1_di" bpmnElement="Gateway_0mndal1" isMarkerVisible="true">
+        <dc:Bounds x="665" y="393" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="732" y="376" width="72" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_06vukvn_di" bpmnElement="Event_06vukvn">
+        <dc:Bounds x="912" y="400" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="899" y="443" width="81" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObjectReference_0abdzoa_di" bpmnElement="DataObjectReference_0abdzoa">
+        <dc:Bounds x="402" y="565" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="307" y="570" width="85" height="66" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_12iome5_di" bpmnElement="Activity_1qo4uf5">
+        <dc:Bounds x="440" y="378" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1cxzi1m_di" bpmnElement="Gateway_1cxzi1m" isMarkerVisible="true">
+        <dc:Bounds x="465" y="168" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_11l2u8i_di" bpmnElement="Gateway_11l2u8i" isMarkerVisible="true">
+        <dc:Bounds x="785" y="168" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="766" y="225" width="89" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TextAnnotation_1jn67hu_di" bpmnElement="TextAnnotation_1jn67hu">
+        <dc:Bounds x="520" y="530" width="100" height="96" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_09lnuls_di" bpmnElement="Activity_0pyljg1">
+        <dc:Bounds x="610" y="153" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0csa3yz_di" bpmnElement="Event_0csa3yz">
+        <dc:Bounds x="142" y="175" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="125" y="218" width="70" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_07avkb8_di" bpmnElement="Activity_05mt43k">
+        <dc:Bounds x="240" y="153" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObjectReference_024hmi1_di" bpmnElement="DataObjectReference_024hmi1">
+        <dc:Bounds x="272" y="393" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="258" y="450" width="66" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0push58_di" bpmnElement="Event_1rjrpod">
+        <dc:Bounds x="672" y="215" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="702" y="251" width="56" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DataInputAssociation_0yc8zmv_di" bpmnElement="DataInputAssociation_0yc8zmv">
+        <di:waypoint x="308" y="418" />
+        <di:waypoint x="440" y="418" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_0a5ghfj_di" bpmnElement="DataOutputAssociation_0a5ghfj">
+        <di:waypoint x="474" y="458" />
+        <di:waypoint x="432" y="565" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_06ph0ya_di" bpmnElement="DataOutputAssociation_06ph0ya">
+        <di:waypoint x="290" y="233" />
+        <di:waypoint x="292" y="393" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Association_1hs5en3_di" bpmnElement="Association_1hs5en3">
+        <di:waypoint x="515" y="458" />
+        <di:waypoint x="561" y="530" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

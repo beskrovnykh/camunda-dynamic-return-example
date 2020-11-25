@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="4.0.0" camunda:diagramRelationId="eec834f1-3962-479a-ade7-5831fa50ee7c">
+  <bpmn:process id="pmsDraftStepBackV1" name="Pms draft step back v1" isExecutable="true">
+    <bpmn:subProcess id="Activity_1bl35jt" name="Межвед. cогласование">
+      <bpmn:incoming>Flow_1yqvbuz</bpmn:incoming>
+      <bpmn:outgoing>Flow_1yngel8</bpmn:outgoing>
+      <bpmn:startEvent id="Event_19ndr8j" name="Требуется согласовать документы">
+        <bpmn:extensionElements>
+          <camunda:executionListener event="start">
+            <camunda:script scriptFormat="groovy">execution.setVariable("counter", 0)</camunda:script>
+          </camunda:executionListener>
+        </bpmn:extensionElements>
+        <bpmn:outgoing>Flow_19cokij</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:sequenceFlow id="Flow_19cokij" sourceRef="Event_19ndr8j" targetRef="Gateway_0z2chl8" />
+      <bpmn:exclusiveGateway id="Gateway_1jnli76" name="Остались ли еще ведомства?">
+        <bpmn:incoming>Flow_0w76xhi</bpmn:incoming>
+        <bpmn:outgoing>Flow_1mpi5ke</bpmn:outgoing>
+        <bpmn:outgoing>Flow_0pycgvo</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:userTask id="approval" name="Согласовать">
+        <bpmn:extensionElements>
+          <camunda:taskListener event="complete">
+            <camunda:script scriptFormat="groovy">if (isApproved) {
+   task.execution.setVariable("counter", counter+1)
+}</camunda:script>
+          </camunda:taskListener>
+          <camunda:formData>
+            <camunda:formField id="isApproved" label="Согласовано?" type="boolean" defaultValue="false" />
+            <camunda:formField id="counter" label="# ведомства" type="long">
+              <camunda:validation>
+                <camunda:constraint name="readonly" />
+              </camunda:validation>
+            </camunda:formField>
+          </camunda:formData>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_1mpi5ke</bpmn:incoming>
+        <bpmn:incoming>Flow_0bb6zge</bpmn:incoming>
+        <bpmn:outgoing>Flow_0w76xhi</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:sequenceFlow id="Flow_0w76xhi" name="Нет" sourceRef="approval" targetRef="Gateway_1jnli76" />
+      <bpmn:sequenceFlow id="Flow_1mpi5ke" name="Да" sourceRef="Gateway_1jnli76" targetRef="approval">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${counter &lt; approvals.size()}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:endEvent id="Event_06tpgmm" name="Согласовано">
+        <bpmn:extensionElements>
+          <camunda:executionListener event="end">
+            <camunda:script scriptFormat="groovy">println "success"</camunda:script>
+          </camunda:executionListener>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_0pycgvo</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_0pycgvo" sourceRef="Gateway_1jnli76" targetRef="Event_06tpgmm">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${counter == approvals.size()}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:exclusiveGateway id="Gateway_0z2chl8">
+        <bpmn:incoming>Flow_19cokij</bpmn:incoming>
+        <bpmn:incoming>Flow_0i34whw</bpmn:incoming>
+        <bpmn:outgoing>Flow_0bb6zge</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:sequenceFlow id="Flow_0bb6zge" sourceRef="Gateway_0z2chl8" targetRef="approval" />
+      <bpmn:boundaryEvent id="Event_1yh3t77" name="Документы отклонены" attachedToRef="approval">
+        <bpmn:extensionElements>
+          <camunda:executionListener event="start">
+            <camunda:script scriptFormat="groovy">println "rejected"
+execution.removeVariable("isApproved")
+</camunda:script>
+          </camunda:executionListener>
+        </bpmn:extensionElements>
+        <bpmn:outgoing>Flow_15a4ntq</bpmn:outgoing>
+        <bpmn:conditionalEventDefinition id="ConditionalEventDefinition_12dqslg">
+          <bpmn:condition xsi:type="bpmn:tFormalExpression">${!isApproved}</bpmn:condition>
+        </bpmn:conditionalEventDefinition>
+      </bpmn:boundaryEvent>
+      <bpmn:exclusiveGateway id="Gateway_1dgmw8n" name="в каком ведомстве?">
+        <bpmn:incoming>Flow_15a4ntq</bpmn:incoming>
+        <bpmn:outgoing>Flow_02842ir</bpmn:outgoing>
+        <bpmn:outgoing>Flow_1kmvad9</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:endEvent id="Event_12y50u3" name="Запрос на возврат заявителю">
+        <bpmn:incoming>Flow_1kmvad9</bpmn:incoming>
+        <bpmn:escalationEventDefinition id="EscalationEventDefinition_16sxh21" escalationRef="Escalation_0mcw3u6" />
+      </bpmn:endEvent>
+      <bpmn:userTask id="prepareRollback" name="Определить ведомство для возврата" camunda:assignee="demo">
+        <bpmn:extensionElements>
+          <camunda:formData>
+            <camunda:formField id="counter" label="Направить на доработку в ведомство #" type="long" />
+          </camunda:formData>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_02842ir</bpmn:incoming>
+        <bpmn:outgoing>Flow_0i34whw</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:sequenceFlow id="Flow_02842ir" name="в 2, 3, 4 ..." sourceRef="Gateway_1dgmw8n" targetRef="prepareRollback">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${counter &gt; 0}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_1kmvad9" name="в 1" sourceRef="Gateway_1dgmw8n" targetRef="Event_12y50u3">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${counter == 0}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_0i34whw" sourceRef="prepareRollback" targetRef="Gateway_0z2chl8" />
+      <bpmn:sequenceFlow id="Flow_15a4ntq" sourceRef="Event_1yh3t77" targetRef="Gateway_1dgmw8n" />
+    </bpmn:subProcess>
+    <bpmn:startEvent id="Event_0vwmrr2" name="Требуется согласование">
+      <bpmn:outgoing>Flow_0ewq7mk</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_1yqvbuz" sourceRef="setApprovals" targetRef="Activity_1bl35jt" />
+    <bpmn:sequenceFlow id="Flow_0ewq7mk" sourceRef="Event_0vwmrr2" targetRef="setApprovals" />
+    <bpmn:sequenceFlow id="Flow_1yngel8" sourceRef="Activity_1bl35jt" targetRef="Event_1khknn6" />
+    <bpmn:boundaryEvent id="Event_0fb9eyy" name="Возврат заявителю" attachedToRef="Activity_1bl35jt">
+      <bpmn:outgoing>Flow_1a2ukdi</bpmn:outgoing>
+      <bpmn:escalationEventDefinition id="EscalationEventDefinition_0f73aj1" escalationRef="Escalation_0mcw3u6" />
+    </bpmn:boundaryEvent>
+    <bpmn:endEvent id="Event_1khknn6" name="Согласовано">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="end">
+          <camunda:script scriptFormat="groovy">println "success"</camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1yngel8</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="Event_0a6ujoc" name="Возвращено заявителю">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="start">
+          <camunda:script scriptFormat="groovy">println "sent back"</camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1a2ukdi</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1a2ukdi" sourceRef="Event_0fb9eyy" targetRef="Event_0a6ujoc" />
+    <bpmn:scriptTask id="setApprovals" name="Определить согласующие ведомства" scriptFormat="groovy" camunda:resultVariable="approvals">
+      <bpmn:incoming>Flow_0ewq7mk</bpmn:incoming>
+      <bpmn:outgoing>Flow_1yqvbuz</bpmn:outgoing>
+      <bpmn:script>approvals = [1, 2, 3]</bpmn:script>
+    </bpmn:scriptTask>
+  </bpmn:process>
+  <bpmn:message id="Message_133ydgt" name="rejected" />
+  <bpmn:escalation id="Escalation_0mcw3u6" name="Back request" escalationCode="back_request" />
+  <bpmn:message id="Message_1pjme5k" name="rollback" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="pmsDraftStepBackV1">
+      <bpmndi:BPMNEdge id="Flow_1a2ukdi_di" bpmnElement="Flow_1a2ukdi">
+        <di:waypoint x="1200" y="212" />
+        <di:waypoint x="1200" y="100" />
+        <di:waypoint x="1252" y="100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1yngel8_di" bpmnElement="Flow_1yngel8">
+        <di:waypoint x="1300" y="460" />
+        <di:waypoint x="1422" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ewq7mk_di" bpmnElement="Flow_0ewq7mk">
+        <di:waypoint x="208" y="450" />
+        <di:waypoint x="270" y="450" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1yqvbuz_di" bpmnElement="Flow_1yqvbuz">
+        <di:waypoint x="370" y="450" />
+        <di:waypoint x="540" y="450" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Event_0a6ujoc_di" bpmnElement="Event_0a6ujoc">
+        <dc:Bounds x="1252" y="82" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1238" y="125" width="64" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_05cne6l_di" bpmnElement="Event_1khknn6">
+        <dc:Bounds x="1422" y="442" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1407" y="485" width="67" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0kjc6z2_di" bpmnElement="setApprovals">
+        <dc:Bounds x="270" y="410" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0vwmrr2_di" bpmnElement="Event_0vwmrr2">
+        <dc:Bounds x="172" y="432" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="155" y="475" width="70" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1bl35jt_di" bpmnElement="Activity_1bl35jt" isExpanded="true">
+        <dc:Bounds x="540" y="230" width="760" height="550" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_19cokij_di" bpmnElement="Flow_19cokij">
+        <di:waypoint x="678" y="370" />
+        <di:waypoint x="725" y="370" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0w76xhi_di" bpmnElement="Flow_0w76xhi">
+        <di:waypoint x="960" y="370" />
+        <di:waypoint x="1035" y="370" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1130" y="353" width="19" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1mpi5ke_di" bpmnElement="Flow_1mpi5ke">
+        <di:waypoint x="1060" y="345" />
+        <di:waypoint x="1060" y="300" />
+        <di:waypoint x="910" y="300" />
+        <di:waypoint x="910" y="330" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="984" y="283" width="14" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0pycgvo_di" bpmnElement="Flow_0pycgvo">
+        <di:waypoint x="1085" y="370" />
+        <di:waypoint x="1182" y="370" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0bb6zge_di" bpmnElement="Flow_0bb6zge">
+        <di:waypoint x="775" y="370" />
+        <di:waypoint x="860" y="370" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_02842ir_di" bpmnElement="Flow_02842ir">
+        <di:waypoint x="910" y="575" />
+        <di:waypoint x="910" y="600" />
+        <di:waypoint x="800" y="600" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="834" y="573" width="52" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1kmvad9_di" bpmnElement="Flow_1kmvad9">
+        <di:waypoint x="935" y="550" />
+        <di:waypoint x="1042" y="550" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="962" y="523" width="16" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0i34whw_di" bpmnElement="Flow_0i34whw">
+        <di:waypoint x="750" y="560" />
+        <di:waypoint x="750" y="395" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_15a4ntq_di" bpmnElement="Flow_15a4ntq">
+        <di:waypoint x="910" y="428" />
+        <di:waypoint x="910" y="525" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Activity_0wtzrod_di" bpmnElement="approval">
+        <dc:Bounds x="860" y="330" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1jnli76_di" bpmnElement="Gateway_1jnli76" isMarkerVisible="true">
+        <dc:Bounds x="1035" y="345" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1016" y="402" width="89" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_06tpgmm_di" bpmnElement="Event_06tpgmm">
+        <dc:Bounds x="1182" y="352" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1167" y="395" width="67" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_19ndr8j_di" bpmnElement="Event_19ndr8j">
+        <dc:Bounds x="642" y="352" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="629" y="395" width="63" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1dgmw8n_di" bpmnElement="Gateway_1dgmw8n" isMarkerVisible="true">
+        <dc:Bounds x="885" y="525" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="839" y="491" width="61" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_11twqoh_di" bpmnElement="Event_12y50u3">
+        <dc:Bounds x="1042" y="532" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1034" y="575" width="55" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0zz57ws_di" bpmnElement="prepareRollback">
+        <dc:Bounds x="700" y="560" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0z2chl8_di" bpmnElement="Gateway_0z2chl8" isMarkerVisible="true">
+        <dc:Bounds x="725" y="345" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_17tfoxi_di" bpmnElement="Event_1yh3t77">
+        <dc:Bounds x="892" y="392" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="917" y="435" width="57" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_04866yv_di" bpmnElement="Event_0fb9eyy">
+        <dc:Bounds x="1182" y="212" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1173" y="255" width="55" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
